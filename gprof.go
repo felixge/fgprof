@@ -1,7 +1,9 @@
 // Package gprof implements an experimental goroutine profiler that allows
-// users to analyze CPU and Off-CPU time together. This seems like it should be
-// a common profiling use case, but runtime/pprof and net/http/pprof don't seem
-// to support it.
+// users to analyze function time spent On-CPU as well as Off-CPU [1] (e.g.
+// waiting for I/O) together. This does not seem to be possible with the
+// builtin Go tools.
+//
+// [1] http://www.brendangregg.com/offcpuanalysis.html
 package gprof
 
 import (
@@ -119,6 +121,9 @@ outer:
 	}
 }
 
+// Handler returns an http handler that takes a "?seconds=N" query argument
+// which produces a goroutine profile over the given duration in a text format
+// that can be visualized with Brendan Gregg's FlameExplain tool.
 func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var seconds int
