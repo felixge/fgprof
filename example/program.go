@@ -24,12 +24,6 @@ func Program() {
 	}
 }
 
-func timeFn(fn func()) {
-	start := time.Now()
-	fn()
-	fmt.Printf("%s\n", time.Since(start))
-}
-
 func slowNetworkRequest() {
 	addr := os.Getenv("SLEEPD_ADDR")
 	res, err := http.Get("http://" + addr + "/?sleep=" + networkTime.String())
