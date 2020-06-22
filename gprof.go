@@ -44,6 +44,8 @@ func Start(w io.Writer) func() error {
 	return func() error {
 		stopCh <- struct{}{}
 
+		// Sort the stacks since I suspect that Brendan Gregg's FlameGraph tool's
+		// display order is influenced by it.
 		var stacks []string
 		for stack := range stackCounts {
 			stacks = append(stacks, stack)
