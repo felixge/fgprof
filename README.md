@@ -98,10 +98,6 @@ func main() {
 }
 ```
 
-Finally, a profile that shows all three of our functions and how much time
-we're spending on them. It also turns out our `weirdFunction()` was simply
-calling `time.Sleep()`, how weird indeed!
-
 ```
 git clone https://github.com/brendangregg/FlameGraph
 cd FlameGrap
@@ -109,6 +105,9 @@ curl -s localhost:6060/?seconds=10 > gprof.fold
 ./flamegraph.pl gprof.fold > gprof.svg
 ```
 
+Finally, a profile that shows all three of our functions and how much time
+we're spending on them. It also turns out our `weirdFunction()` was simply
+calling `time.Sleep()`, how weird indeed!
 
 ![](./example/gprof.png)
 
