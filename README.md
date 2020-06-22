@@ -6,7 +6,7 @@ As far as I know, this kind of analysis is currently not possible with the built
 
 ## Quick Start
 
-If you don't want to read the wall of text below (you should!), you can directly jump to the <a href="#gprof-1">ggprof section</a> below to see how to use this profiler.
+If you don't want to read the wall of text below (you should!), you can directly jump to the <a href="#gprof-1">gprof section</a> below to see how to use this profiler.
 
 ## The Problem
 
@@ -121,13 +121,13 @@ Finally, a profile that shows all three of our functions and how much time we're
 
 ## How it Works
 
-ggprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
+gprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
 
 This data is used to maintain an in-memory stack counter which gets converted to an output format understood by Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) at the end of the profiling session.
 
 Hardcore Go/Systems developers might rightfully point out that real profilers [use signals](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/), and I agree. If time allows, I'd love to make gprof more robust or even contribute an improved version to the Go project itself.
 
-However, for the time being, ggprof is hopefully going to be more useful than the current tooling when it comes to debugging I/O + CPU intense programs.
+However, for the time being, gprof is hopefully going to be more useful than the current tooling when it comes to debugging I/O + CPU intense programs.
 
 ## Known Issues
 
