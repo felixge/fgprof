@@ -105,11 +105,19 @@ curl -s localhost:6060/?seconds=10 > gprof.fold
 ./flamegraph.pl gprof.fold > gprof.svg
 ```
 
-Finally, a profile that shows all three of our functions and how much time
-we're spending on them. It also turns out our `weirdFunction()` was simply
-calling `time.Sleep()`, how weird indeed!
+Finally, a profile that shows all three of our functions and how much time we're spending on them. It also turns out our `weirdFunction()` was simply calling `time.Sleep()`, how weird indeed!
 
 ![](./example/gprof.png)
+
+## How it Works
+
+ggprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This profile contains a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
+
+This data is used to maintain an in-memory stack counter which gets converted to an output format understood by Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) at the end of the profiling session.
+
+Hardcore Go/Systems developers might rightfully point out that real profilers [use signals](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/), and I agree. If time allows, I'd love to make gprof more robust or even contribute an improved version to the Go project itself.
+
+However, for the time being, ggprof is hopefully going to be more useful than the current tooling when it comes to debugging I/O + CPU intense programs.
 
 ## Known Issues
 
