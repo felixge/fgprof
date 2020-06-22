@@ -121,7 +121,7 @@ Finally, a profile that shows all three of our functions and how much time we're
 
 ## How it Works
 
-ggprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This profile contains a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
+ggprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
 
 This data is used to maintain an in-memory stack counter which gets converted to an output format understood by Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) at the end of the profiling session.
 
