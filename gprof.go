@@ -7,6 +7,7 @@ package gprof
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"runtime"
 	"sort"
 	"strings"
@@ -20,17 +21,20 @@ import (
 //
 // [1] https://github.com/brendangregg/FlameGraph#2-fold-stacks
 func Start(w io.Writer) func() error {
+	// Go's CPU profiler uses 100hz, but 99hz might be less likely to result in
+	// accidental synchronization with the program we're profiling.
 	const hz = 99
-	ticker := time.NewTicker(time.Second / hz)
+	//ticker := time.NewTicker(time.Second / hz)
 	stopCh := make(chan struct{})
 
 	stackCounts := stackCounter{}
 	go func() {
-		defer ticker.Stop()
+		//defer ticker.Stop()
 
 		for {
 			select {
-			case <-ticker.C:
+			//case <-ticker.C:
+			case <-time.After(time.Second / hz):
 				stackCounts.Update()
 			case <-stopCh:
 				return
@@ -112,4 +116,18 @@ outer:
 		key := strings.Join(stack, ";")
 		s[key]++
 	}
+}
+
+func Handler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var seconds int
+		if _, err := fmt.Sscanf(r.URL.Query().Get("seconds"), "%d", &seconds); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "bad seconds: %d: %s\n", seconds, err)
+		}
+
+		stop := Start(w)
+		defer stop()
+		time.Sleep(time.Duration(seconds) * time.Second)
+	})
 }
