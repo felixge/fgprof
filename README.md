@@ -48,9 +48,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	for {
-		// ...
-	}
+	// code to profile ...
 }
 ```
 
@@ -102,9 +100,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", gprof.Handler()))
 	}()
 
-	for {
-		// ...
-	}
+	// code to profile ..
 }
 ```
 
