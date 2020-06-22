@@ -24,17 +24,16 @@ func Start(w io.Writer) func() error {
 	// Go's CPU profiler uses 100hz, but 99hz might be less likely to result in
 	// accidental synchronization with the program we're profiling.
 	const hz = 99
-	//ticker := time.NewTicker(time.Second / hz)
+	ticker := time.NewTicker(time.Second / hz)
 	stopCh := make(chan struct{})
 
 	stackCounts := stackCounter{}
 	go func() {
-		//defer ticker.Stop()
+		defer ticker.Stop()
 
 		for {
 			select {
-			//case <-ticker.C:
-			case <-time.After(time.Second / hz):
+			case <-ticker.C:
 				stackCounts.Update()
 			case <-stopCh:
 				return
