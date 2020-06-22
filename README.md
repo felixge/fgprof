@@ -4,6 +4,10 @@ gprof is an experimental goroutine profiler that allows users to analyze functio
 
 As far as I know, this kind of analysis is currently not possible with the builtin Go tools, but I'd be happy to be proven wrong about it. I'd also love to get general feedback about this kind of profiling.
 
+## Quick Start
+
+If you don't want to read the wall of text below (you should!), you can directly jump to the ... section below.
+
 ## The Problem
 
 Let's say you've been tasked to optimize a simple program that has a loop calling out to three functions:
@@ -31,6 +35,8 @@ fmt.Printf("slowNetworkRequest: %s\n", time.Since(start))
 ```
 
 However, this can be very tedious for large programs. You'll also have to figure out how to average the numbers in case they fluctuate. And once you've done that, you'll have to repeat the process for the functions called by the function you decide to focus on.
+
+### /debug/pprof/profile
 
 So, this seems like a perfect use case for a profiler. Let's try the builtin pprof profiler:
 
@@ -70,6 +76,8 @@ weirdFunction: 10.105371ms
 
 So what's going on? Well, as it turns out, `/debug/pprof/profile` is a pure CPU profiler, i.e. it only shows the time our code is spending on the CPU. Time spent waiting on I/O is completely hidden from us.
 
+### /debug/pprof/trace
+
 Let's try something else. The `/debug/pprof/trace` endpoint includes a "synchronization blocking profile" profile, maybe that's what we need?
 
 ```
@@ -81,6 +89,8 @@ go tool pprof --http=:6062 sync.pprof
 Ok, so all our time is spent on `slowNetworkRequest()`? That doesn't make sense, we already know that this is not true. I'm not entirely sure, but I think this profile only shows the time our code is blocked on channel operations.
 
 ![](./example/pprof_trace.png)
+
+### gprof
 
 So what can we do? Let's try gprof. Adding it as as easy as `net/http/pprof`, but it requires Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) for visualization.
 
