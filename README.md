@@ -82,7 +82,7 @@ Ok, so all our time is spent on `slowNetworkRequest()`? That doesn't make sense,
 
 ![](./example/pprof_trace.png)
 
-So what can we do? Let's try gprof!
+So what can we do? Let's try gprof. Adding it as as easy as `net/http/pprof`, but it requires Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) for visualization.
 
 ```go
 import "github.com/felixge/gprof"
@@ -97,6 +97,10 @@ func main() {
 	}
 }
 ```
+
+Finally, a profile that shows all three of our functions and how much time
+we're spending on them. It also turns out our `weirdFunction()` was simply
+calling `time.Sleep()`, how weird indeed!
 
 ```
 git clone https://github.com/brendangregg/FlameGraph
