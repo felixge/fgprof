@@ -6,7 +6,7 @@ As far as I know, this kind of analysis is currently not possible with the built
 
 ## Quick Start
 
-If you don't want to read the wall of text below (you should!), you can directly jump to the ... section below.
+If you don't want to read the wall of text below (you should!), you can directly jump to the <a href="#gprof-1">ggprof section</a> below to see how to use this profiler.
 
 ## The Problem
 
