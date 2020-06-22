@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 )
@@ -40,7 +41,14 @@ func Start(w io.Writer) func() error {
 	return func() error {
 		stopCh <- struct{}{}
 
-		for stack, count := range stackCounts {
+		var stacks []string
+		for stack := range stackCounts {
+			stacks = append(stacks, stack)
+		}
+		sort.Strings(stacks)
+
+		for _, stack := range stacks {
+			count := stackCounts[stack]
 			if _, err := fmt.Fprintf(w, "%s %d\n", stack, count); err != nil {
 				return err
 			}
