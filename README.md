@@ -110,7 +110,7 @@ That was easy! Looks like we're spending all our time in `cpuIntensiveTask()`, s
 
 ![](./assets/pprof_cpu.png)
 
-But before we get carried away with that, but let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above:
+But before we get carried away with that, let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above:
 
 ```
 slowNetworkRequest: 66.815041ms
@@ -140,7 +140,7 @@ Oh no, we're being mislead again. This profiler thinks all our time is spent on 
 
 ### /debug/fgprof
 
-So what can we do? Let's try fgprof, which is designed to analyze mixed I/O and CPU workloads like the one we're dealing with here. We can easily add it alongside the builtin profiler.
+So what can we do? Let's try fgprof, which is designed to analyze mixed I/O and CPU workloads like the one we're dealing with here. We can easily add it alongside the builtin profilers.
 
 ```go
 import(
