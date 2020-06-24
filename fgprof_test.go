@@ -17,7 +17,7 @@ import (
 func TestStart(t *testing.T) {
 	out := &bytes.Buffer{}
 	stop := Start(out, FormatFolded)
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	if err := stop(); err != nil {
 		t.Fatal(err)
 	}
