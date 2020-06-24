@@ -48,7 +48,7 @@ func (s stackCounter) Update() {
 	rpc := make([]uintptr, 1)
 	n := runtime.Callers(1, rpc)
 	if n < 1 {
-		panic("bad")
+		panic("could not determine selfFrame")
 	}
 	selfFrame, _ := runtime.CallersFrames(rpc).Next()
 

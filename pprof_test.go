@@ -1,10 +1,8 @@
 package fgprof
 
 import (
-	"os"
+	"strings"
 	"testing"
-
-	qt "github.com/frankban/quicktest"
 )
 
 func Test_toProfile(t *testing.T) {
@@ -14,14 +12,25 @@ func Test_toProfile(t *testing.T) {
 	}
 
 	p := toProfile(s, 99)
-	c := qt.New(t)
-	c.Assert(p.String(), qt.Equals, p.String())
-	c.Assert(p.CheckValid(), qt.IsNil)
-
-	file, err := os.Create("test.profile")
-	if err != nil {
+	if err := p.CheckValid(); err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
-	p.WriteUncompressed(file)
+
+	want := strings.TrimSpace(`
+Period: 0
+Samples:
+samples/count time/nanoseconds
+          2   20202020: 1 2 
+          1   10101010: 3 
+Locations
+     1: 0x0 M=1 foo :0 s=0()
+     2: 0x0 M=1 bar :0 s=0()
+     3: 0x0 M=1 foo :0 s=0()
+Mappings
+1: 0x0/0x0/0x0   [FN]
+`)
+	got := strings.TrimSpace(p.String())
+	if want != got {
+		t.Fatalf("got:\n%s\n\nwant:\n%s", got, want)
+	}
 }
