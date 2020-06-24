@@ -1,14 +1,58 @@
 # fgprof - The Full Go Profiler
 
-fgprof is a sampling Go profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
+fgprof is a sampling [Go](https://golang.org/) profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
 
-Go's builtin sampling CPU profiler in `runtime/pprof` can only show On-CPU time, but is very good at that if that's all you care about. `net/http/pprof` also includes a tracing profiler that can analyze I/O, but it can't be combined with the CPU profiler.
+Go's builtin sampling CPU profiler can only show On-CPU time, but it's very good at that. Go also supports tracing profiling that can analyze I/O, but it can't be combined with the CPU profiler.
 
-fgprof is designed for profiling applications with mixed I/O and CPU workloads. Keep reading for more details.
+fgprof is designed for analyzing applications with mixed I/O and CPU workloads.
 
 ## Quick Start
 
-If you don't want to read the wall of text below (you should!), you can directly jump to the <a href="#fgprof-1">fgprof section</a> below to see how to use this profiler.
+If this is the first time you hear about fgprof, you should start by reading
+about [The Problem](#the-problem).
+
+There is no need to choose between fgprof and the builtin profiler. Here is how to add both to your application:
+
+```
+package main
+
+import(
+	_ "net/http/pprof"
+	"github.com/felixge/fgprof"
+)
+
+func main() {
+	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	// <your code>
+}
+```
+
+fgprof is compatible with the `go tool pprof` visualizer, so taking and analyzing a 3s profile is as simple as:
+
+```
+go tool pprof --http=:6061 http://localhost:6060/debug/fgprof?seconds=3
+```
+
+![](./assets/fgprof_pprof.png)
+
+Additionally fgprof supports the plain text format used by Brendan Gregg's [FlameGraph](http://www.brendangregg.com/flamegraphs.html) utility:
+
+```
+git clone https://github.com/brendangregg/FlameGraph
+cd FlameGraph
+curl -s 'localhost:6060/debug/fgprof?seconds=3' > fgprof.fold
+./flamegraph.pl fgprof.fold > fgprof.svg
+```
+
+![](./assets/fgprof_gregg.png)
+
+Which tool you prefer is up to you, but one thing I like about Gregg's tool is that you can filter the plaintext files using grep which can be very useful when analyzing large programs.
+
+If you don't have a program to profile right now, you can `go run ./example` which should allow you to reproduce the graphs you see above.
 
 ## The Problem
 
