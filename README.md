@@ -27,7 +27,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	// <your code>
+	// <code to profile>
 }
 ```
 
@@ -84,7 +84,7 @@ However, this can be very tedious for large programs. You'll also have to figure
 
 ### /debug/pprof/profile
 
-So, this seems like a perfect use case for a profiler. Let's try the builtin pprof profiler:
+So, this seems like a perfect use case for a profiler. Let's try the builtin pprof profiler to analyze our program for 10s:
 
 ```go
 import _ "net/http/pprof"
@@ -94,19 +94,19 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	// code to profile ...
+	// <code to profile>
 }
 ```
 
 ```
-go tool pprof -http=:6070 http://localhost:6060/debug/pprof/profile?seconds=10
+go tool pprof -http=:6061 http://localhost:6060/debug/pprof/profile?seconds=10
 ```
 
 That was easy! Looks like we're spending all our time in `cpuIntensiveTask()`, so let's focus on that?
 
 ![](./assets/pprof_cpu.png)
 
-Maybe, but let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above and looking at the results:
+But before we get carried away with that, but let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above:
 
 ```
 slowNetworkRequest: 66.815041ms
@@ -118,7 +118,7 @@ weirdFunction: 10.105371ms
 // ...
 ```
 
-So what's going on? Well, as it turns out, `/debug/pprof/profile` is a pure CPU profiler, i.e. it only shows the time our code is spending on the CPU. Time spent waiting on I/O is completely hidden from us.
+Oh no, the builtin CPU profiler is misleading us! How is that possible? Well, it turns out the builtin profiler only shows On-CPU time. Time spent waiting on I/O is completely hidden from us.
 
 ### /debug/pprof/trace
 
@@ -127,45 +127,50 @@ Let's try something else. The `/debug/pprof/trace` endpoint includes a "synchron
 ```
 curl -so pprof.trace http://localhost:6060/debug/pprof/trace?seconds=10
 go tool trace --pprof=sync pprof.trace > sync.pprof
-go tool pprof --http=:6062 sync.pprof
+go tool pprof --http=:6061 sync.pprof
 ```
 
-Ok, so all our time is spent on `slowNetworkRequest()`? That doesn't make sense, we already know that this is not true. I'm not entirely sure, but I think this profile only shows the time our code is blocked on channel operations.
+Oh no, we're being mislead again. This profiler thinks all our time is spent on `slowNetworkRequest()`. It's completely missing `cpuIntensiveTask()`. And what about `weirdFunction()`? It seems like no builtin profiler can see it?
 
 ![](./assets/pprof_trace.png)
 
-### fgprof
+### /debug/fgprof
 
-So what can we do? Let's try fgprof. Adding it as as easy as `net/http/pprof`, but it requires Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) for visualization.
+So what can we do? Let's try fgprof, which is designed to analyze mixed I/O and CPU workloads like the one we're dealing with here. We can easily add it alongside the builtin profiler.
 
 ```go
-import "github.com/felixge/fgprof"
+import(
+	_ "net/http/pprof"
+	"github.com/felixge/fgprof"
+)
 
 func main() {
+	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", fgprof.Handler()))
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	// code to profile ..
+	// <code to profile>
 }
 ```
 
+
+
 ```
-git clone https://github.com/brendangregg/FlameGraph
-cd FlameGrap
-curl -s localhost:6060/?seconds=10 > fgprof.fold
-./flamegraph.pl fgprof.fold > fgprof.svg
+go tool pprof --http=:6061 http://localhost:6060/debug/fgprof?seconds=10
 ```
 
 Finally, a profile that shows all three of our functions and how much time we're spending on them. It also turns out our `weirdFunction()` was simply calling `time.Sleep()`, how weird indeed!
 
-![](./assets/fgprof.png)
+![](./assets/fgprof_pprof.png)
 
 ## How it Works
 
+### fgprof
+
 fgprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
 
-This data is used to maintain an in-memory stack counter which gets converted to an output format understood by Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) at the end of the profiling session.
+This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The whole implementation is < 100 lines of code, you should [check it out](./fgprof.go).
 
 Hardcore Go/Systems developers might rightfully point out that real profilers [use signals](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/), and I agree. If time allows, I'd love to make fgprof more robust or even contribute an improved version to the Go project itself.
 
