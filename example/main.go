@@ -1,10 +1,15 @@
-package example
+package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
+
+	_ "net/http/pprof"
+
+	"github.com/felixge/gprof"
 )
 
 const (
@@ -13,7 +18,12 @@ const (
 	networkTime = 60 * time.Millisecond
 )
 
-func Program() {
+func main() {
+	http.DefaultServeMux.Handle("/debug/gprof", gprof.Handler())
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	for {
 		// Http request to a web service that might be slow.
 		slowNetworkRequest()
