@@ -1,3 +1,3 @@
-module github.com/felixge/gprof
+module github.com/felixge/fgprof
 
 go 1.14

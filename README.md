@@ -1,12 +1,14 @@
-# gprof
+# fgprof - The Full Go Profiler
 
-gprof is an experimental goroutine profiler that allows users to analyze function time spent On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. waiting for I/O) together.
+fgprof is a sampling Go profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
 
-As far as I know, this kind of analysis is currently not possible with the builtin Go tools, but I'd be happy to be proven wrong about it. I'd also love to get general feedback about this kind of profiling.
+Go's builtin sampling CPU profiler in `runtime/pprof` can only show On-CPU time, but is very good at that if that's all you care about. `net/http/pprof` also includes a tracing profiler that can analyze I/O, but it can't be combined with the CPU profiler.
+
+fgprof is designed for profiling applications with mixed I/O and CPU workloads. Keep reading for more details.
 
 ## Quick Start
 
-If you don't want to read the wall of text below (you should!), you can directly jump to the <a href="#gprof-1">gprof section</a> below to see how to use this profiler.
+If you don't want to read the wall of text below (you should!), you can directly jump to the <a href="#fgprof-1">fgprof section</a> below to see how to use this profiler.
 
 ## The Problem
 
@@ -88,16 +90,16 @@ Ok, so all our time is spent on `slowNetworkRequest()`? That doesn't make sense,
 
 ![](./assets/pprof_trace.png)
 
-### gprof
+### fgprof
 
-So what can we do? Let's try gprof. Adding it as as easy as `net/http/pprof`, but it requires Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) for visualization.
+So what can we do? Let's try fgprof. Adding it as as easy as `net/http/pprof`, but it requires Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) for visualization.
 
 ```go
-import "github.com/felixge/gprof"
+import "github.com/felixge/fgprof"
 
 func main() {
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", gprof.Handler()))
+		log.Println(http.ListenAndServe("localhost:6060", fgprof.Handler()))
 	}()
 
 	// code to profile ..
@@ -107,23 +109,23 @@ func main() {
 ```
 git clone https://github.com/brendangregg/FlameGraph
 cd FlameGrap
-curl -s localhost:6060/?seconds=10 > gprof.fold
-./flamegraph.pl gprof.fold > gprof.svg
+curl -s localhost:6060/?seconds=10 > fgprof.fold
+./flamegraph.pl fgprof.fold > fgprof.svg
 ```
 
 Finally, a profile that shows all three of our functions and how much time we're spending on them. It also turns out our `weirdFunction()` was simply calling `time.Sleep()`, how weird indeed!
 
-![](./assets/gprof.png)
+![](./assets/fgprof.png)
 
 ## How it Works
 
-gprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
+fgprof is implemented as a background goroutine the wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
 
 This data is used to maintain an in-memory stack counter which gets converted to an output format understood by Brendan Gregg's [FlameGraph tool](https://github.com/brendangregg/FlameGraph) at the end of the profiling session.
 
-Hardcore Go/Systems developers might rightfully point out that real profilers [use signals](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/), and I agree. If time allows, I'd love to make gprof more robust or even contribute an improved version to the Go project itself.
+Hardcore Go/Systems developers might rightfully point out that real profilers [use signals](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/), and I agree. If time allows, I'd love to make fgprof more robust or even contribute an improved version to the Go project itself.
 
-However, for the time being, gprof is hopefully going to be more useful than the current tooling when it comes to debugging I/O + CPU intense programs.
+However, for the time being, fgprof is hopefully going to be more useful than the current tooling when it comes to debugging I/O + CPU intense programs.
 
 ## Known Issues
 

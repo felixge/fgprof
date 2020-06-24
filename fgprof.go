@@ -1,10 +1,10 @@
-// Package gprof implements an experimental goroutine profiler that allows
+// Package fgprof implements an experimental goroutine profiler that allows
 // users to analyze function time spent On-CPU as well as Off-CPU [1] (e.g.
 // waiting for I/O) together. This does not seem to be possible with the
 // builtin Go tools.
 //
 // [1] http://www.brendangregg.com/offcpuanalysis.html
-package gprof
+package fgprof
 
 import (
 	"fmt"

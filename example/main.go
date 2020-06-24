@@ -7,8 +7,6 @@ import (
 	"time"
 
 	_ "net/http/pprof"
-
-	"github.com/felixge/gprof"
 )
 
 const (
@@ -22,8 +20,8 @@ const (
 var sleepURL string
 
 func main() {
-	// Run http endpoints for both pprof and gprof.
-	http.DefaultServeMux.Handle("/debug/gprof", gprof.Handler())
+	// Run http endpoints for both pprof and fgprof.
+	http.DefaultServeMux.Handle("/debug/fgprof", gprof.Handler())
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
