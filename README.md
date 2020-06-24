@@ -24,7 +24,7 @@ import(
 func main() {
 	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		log.Println(http.ListenAndServe(":6060", nil))
 	}()
 
 	// <code to profile>
@@ -91,7 +91,7 @@ import _ "net/http/pprof"
 
 func main() {
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		log.Println(http.ListenAndServe(":6060", nil))
 	}()
 
 	// <code to profile>
@@ -147,7 +147,7 @@ import(
 func main() {
 	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		log.Println(http.ListenAndServe(":6060", nil))
 	}()
 
 	// <code to profile>
