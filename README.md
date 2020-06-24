@@ -1,4 +1,4 @@
-# fgprof - The Full Go Profiler
+# :rocket: fgprof - The Full Go Profiler
 
 fgprof is a sampling [Go](https://golang.org/) profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
 
