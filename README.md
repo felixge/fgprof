@@ -170,7 +170,7 @@ Finally, a profile that shows all three of our functions and how much time we're
 
 fgprof is implemented as a background goroutine that wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
 
-This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The meat of the implementation is < 100 lines of code, you should [check it out](./fgprof.go).
+This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The meat of the implementation is super simple and < 100 lines of code, you should [check it out](./fgprof.go).
 
 ### Go's builtan CPU Profiler
 
