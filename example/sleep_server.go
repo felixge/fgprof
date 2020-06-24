@@ -2,19 +2,17 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
-	"os"
+	"net/http/httptest"
 	"time"
 )
 
-func main() {
-	h := http.HandlerFunc(sleepHandler)
-	addr := os.Getenv("SLEEPD_ADDR")
-	if addr == "" {
-		addr = "localhost:6061"
-	}
-	log.Println(http.ListenAndServe(addr, h))
+// StartSleepServer starts a server that supports a ?sleep parameter to
+// simulate slow http responses. It returns the url of that server and a
+// function to stop it.
+func StartSleepServer() (url string, stop func()) {
+	server := httptest.NewServer(http.HandlerFunc(sleepHandler))
+	return server.URL, server.Close
 }
 
 func sleepHandler(w http.ResponseWriter, r *http.Request) {

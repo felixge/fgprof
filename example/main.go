@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	_ "net/http/pprof"
@@ -18,11 +17,21 @@ const (
 	networkTime = 60 * time.Millisecond
 )
 
+// sleepURL is the url for the sleep server used by slowNetworkRequest. It's
+// a global variable to keep the cute simplicitly of main's loop.
+var sleepURL string
+
 func main() {
+	// Run http endpoints for both pprof and gprof.
 	http.DefaultServeMux.Handle("/debug/gprof", gprof.Handler())
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
+
+	// Start a sleep server to help with simulating slow network requests.
+	var stop func()
+	sleepURL, stop = StartSleepServer()
+	defer stop()
 
 	for {
 		// Http request to a web service that might be slow.
@@ -35,8 +44,7 @@ func main() {
 }
 
 func slowNetworkRequest() {
-	addr := os.Getenv("SLEEPD_ADDR")
-	res, err := http.Get("http://" + addr + "/?sleep=" + networkTime.String())
+	res, err := http.Get(sleepURL + "/?sleep=" + networkTime.String())
 	if err != nil {
 		panic(err)
 	}
