@@ -176,7 +176,7 @@ fgprof is implemented as a background goroutine that wakes up 99 times per secon
 
 This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The meat of the implementation is super simple and < 100 lines of code, you should [check it out](./fgprof.go).
 
-### Go's builtan CPU Profiler
+### Go's builtin CPU Profiler
 
 The builtin Go CPU profiler uses the [setitimer(2)](https://linux.die.net/man/2/setitimer) system call to ask the operating system to be sent a `SIGPROF` signal 100 times a second. Each signal stops the Go process and gets delivered to a random thread's `sigtrampgo()` function. This function then proceeds to call `sigprof()` or `sigprofNonGo()` to record the thread's current stack.
 
