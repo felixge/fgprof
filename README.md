@@ -13,7 +13,7 @@ about [The Problem](#the-problem).
 
 There is no need to choose between fgprof and the builtin profiler. Here is how to add both to your application:
 
-```
+```go
 package main
 
 import(
