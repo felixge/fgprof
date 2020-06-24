@@ -193,3 +193,7 @@ The following articles helped me to learn more about how profilers in general, a
 
 - [How do Ruby & Python profilers work?](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/) by Julia Evans
 - [Profiling Go programs with pprof](https://jvns.ca/blog/2017/09/24/profiling-go-with-pprof/) by Julia Evans
+
+## License
+
+fgprof is licensed under the MIT License.
