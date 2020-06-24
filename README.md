@@ -84,7 +84,7 @@ However, this can be very tedious for large programs. You'll also have to figure
 
 ### /debug/pprof/profile
 
-So, this seems like a perfect use case for a profiler. Let's try the builtin pprof profiler to analyze our program for 10s:
+So, this seems like a perfect use case for a profiler. Let's try the `/debug/pprof/profile` endpoint of the builtin `net/http/pprof` pkg to analyze our program for 10s:
 
 ```go
 import _ "net/http/pprof"
@@ -122,7 +122,7 @@ Oh no, the builtin CPU profiler is misleading us! How is that possible? Well, it
 
 ### /debug/pprof/trace
 
-Let's try something else. The `/debug/pprof/trace` endpoint includes a "synchronization blocking profile" profile, maybe that's what we need?
+Let's try something else. The `/debug/pprof/trace` endpoint includes a "synchronization blocking profile", maybe that's what we need?
 
 ```
 curl -so pprof.trace http://localhost:6060/debug/pprof/trace?seconds=10
