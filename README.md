@@ -1,3 +1,7 @@
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go)](https://pkg.go.dev/github.com/felixge/fgprof)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/felixge/fgprof/Go)
+![GitHub](https://img.shields.io/github/license/felixge/fgprof)
+
 # :rocket: fgprof - The Full Go Profiler
 
 fgprof is a sampling [Go](https://golang.org/) profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
