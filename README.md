@@ -2,7 +2,7 @@
 
 fgprof is a sampling [Go](https://golang.org/) profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
 
-Go's builtin sampling CPU profiler can only show On-CPU time, but it's very good at that. Go also supports tracing profiling that can analyze I/O, but it can't be combined with the CPU profiler.
+Go's builtin sampling CPU profiler can only show On-CPU time, but it's very good at that. Go also includes tracing profilers that can analyze I/O, but they can't be combined with the CPU profiler.
 
 fgprof is designed for analyzing applications with mixed I/O and CPU workloads.
 
