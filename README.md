@@ -9,7 +9,7 @@ fgprof is designed for analyzing applications with mixed I/O and CPU workloads.
 ## Quick Start
 
 If this is the first time you hear about fgprof, you should start by reading
-about [The Problem](#the-problem).
+about [The Problem](#the-problem) & [How it Works](#how-it-works).
 
 There is no need to choose between fgprof and the builtin profiler. Here is how to add both to your application:
 
