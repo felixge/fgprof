@@ -1,28 +1,19 @@
-// Package fgprof implements an experimental goroutine profiler that allows
-// users to analyze function time spent On-CPU as well as Off-CPU [1] (e.g.
-// waiting for I/O) together. This does not seem to be possible with the
-// builtin Go tools.
-//
-// [1] http://www.brendangregg.com/offcpuanalysis.html
+// fgprof is a sampling Go profiler that allows you to analyze On-CPU as well
+// as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O)
+// time together.
 package fgprof
 
 import (
-	"fmt"
 	"io"
-	"net/http"
 	"runtime"
-	"sort"
 	"strings"
 	"time"
 )
 
 // Start begins profiling the goroutines of the program and returns a function
 // that needs to be invoked by the caller to stop the profiling and write the
-// results to w. The results are written in the folded stack format used by
-// Brendan Gregg's FlameGraph utility [1].
-//
-// [1] https://github.com/brendangregg/FlameGraph#2-fold-stacks
-func Start(w io.Writer) func() error {
+// results to w using the given format.
+func Start(w io.Writer, format Format) func() error {
 	// Go's CPU profiler uses 100hz, but 99hz might be less likely to result in
 	// accidental synchronization with the program we're profiling.
 	const hz = 99
@@ -45,23 +36,7 @@ func Start(w io.Writer) func() error {
 
 	return func() error {
 		stopCh <- struct{}{}
-
-		// Sort the stacks since I suspect that Brendan Gregg's FlameGraph tool's
-		// display order is influenced by it.
-		var stacks []string
-		for stack := range stackCounts {
-			stacks = append(stacks, stack)
-		}
-		sort.Strings(stacks)
-
-		for _, stack := range stacks {
-			count := stackCounts[stack]
-			if _, err := fmt.Fprintf(w, "%s %d\n", stack, count); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return writeFormat(w, stackCounts, format, hz)
 	}
 }
 
@@ -119,21 +94,4 @@ outer:
 		key := strings.Join(stack, ";")
 		s[key]++
 	}
-}
-
-// Handler returns an http handler that takes a "?seconds=N" query argument
-// which produces a goroutine profile over the given duration in a text format
-// that can be visualized with Brendan Gregg's FlameExplain tool.
-func Handler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var seconds int
-		if _, err := fmt.Sscanf(r.URL.Query().Get("seconds"), "%d", &seconds); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, "bad seconds: %d: %s\n", seconds, err)
-		}
-
-		stop := Start(w)
-		defer stop()
-		time.Sleep(time.Duration(seconds) * time.Second)
-	})
 }
