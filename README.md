@@ -58,7 +58,7 @@ go tool pprof -http=:6070 http://localhost:6060/debug/pprof/profile?seconds=10
 
 That was easy! Looks like we're spending all our time in `cpuIntensiveTask()`, so let's focus on that?
 
-![](./example/pprof_cpu.png)
+![](./assets/pprof_cpu.png)
 
 Maybe, but let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above and looking at the results:
 
@@ -86,7 +86,7 @@ go tool pprof --http=:6062 sync.pprof
 
 Ok, so all our time is spent on `slowNetworkRequest()`? That doesn't make sense, we already know that this is not true. I'm not entirely sure, but I think this profile only shows the time our code is blocked on channel operations.
 
-![](./example/pprof_trace.png)
+![](./assets/pprof_trace.png)
 
 ### gprof
 
@@ -113,7 +113,7 @@ curl -s localhost:6060/?seconds=10 > gprof.fold
 
 Finally, a profile that shows all three of our functions and how much time we're spending on them. It also turns out our `weirdFunction()` was simply calling `time.Sleep()`, how weird indeed!
 
-![](./example/gprof.png)
+![](./assets/gprof.png)
 
 ## How it Works
 
