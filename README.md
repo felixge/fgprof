@@ -170,17 +170,26 @@ Finally, a profile that shows all three of our functions and how much time we're
 
 fgprof is implemented as a background goroutine that wakes up 99 times per second and calls `runtime.GoroutineProfile`. This returns a list of all goroutines regardless of their current On/Off CPU scheduling status and their call stacks.
 
-This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The whole implementation is < 100 lines of code, you should [check it out](./fgprof.go).
+This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The meat of the implementation is < 100 lines of code, you should [check it out](./fgprof.go).
 
-Hardcore Go/Systems developers might rightfully point out that real profilers [use signals](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/), and I agree. If time allows, I'd love to make fgprof more robust or even contribute an improved version to the Go project itself.
+### Go's builtan CPU Profiler
 
-However, for the time being, fgprof is hopefully going to be more useful than the current tooling when it comes to debugging I/O + CPU intense programs.
+The builtin Go CPU profiler uses the [setitimer(2)](https://linux.die.net/man/2/setitimer) system call to ask the operating system to be sent a `SIGPROF` signal 100 times a second. Each signal stops the Go process and gets delivered to a random thread's `sigtrampgo()` function. This function then proceeds to call `sigprof()` or `sigprofNonGo()` to record the thread's current stack.
+
+Since Go uses non-blocking I/O, Goroutines that wait on I/O are parked and not running on any threads. Therefore they end up being largely invisible to Go's builtin CPU profiler.
 
 ## Known Issues
 
 There is no perfect approach to profiling, and fgprof is no exception. Below is a list of known issues that will hopefully not be of practical concern for most users, but are important to highlight.
 
-- fgprof can't catch goroutines while they are running in loops without function calls. This may lead to reporting inaccuracies. Use the builtin CPU profiler if this is a problem for you.
+- fgprof can't catch goroutines while they are running in loops without function calls. This can lead to reporting inaccuracies. Use the builtin CPU profiler if this is a problem for you.
 - fgprof may not work in Go 1.13 if another goroutine is in a loop without function calls the whole time. Async preemption in Go 1.14 should mostly fix this issue.
-- Internal runtime functions are not showing up in the stack traces, e.g. `runtime.nanotime` which is called by `time.Since` in the example program.
+- Internal C functions are not showing up in the stack traces, e.g. `runtime.nanotime` which is called by `time.Since` in the example program.
 - The current implementation is relying on the Go scheduler to schedule the internal goroutine at a fixed sample rate. Scheduler delays, especially biased ones, might cause inaccuracies.
+
+## Credits
+
+The following articles helped me to learn more about how profilers in general, and the Go profiler in particular work.
+
+- [How do Ruby & Python profilers work?](https://jvns.ca/blog/2017/12/17/how-do-ruby---python-profilers-work-/) by Julia Evans
+- [Profiling Go programs with pprof](https://jvns.ca/blog/2017/09/24/profiling-go-with-pprof/) by Julia Evans
