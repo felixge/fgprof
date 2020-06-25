@@ -110,7 +110,7 @@ That was easy! Looks like we're spending all our time in `cpuIntensiveTask()`, s
 
 ![](./assets/pprof_cpu.png)
 
-But before we get carried away with that, let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above:
+But before we get carried away, let's quickly double check this assumption by manually timing our function calls with `time.Since()` as described above:
 
 ```
 slowNetworkRequest: 66.815041ms
