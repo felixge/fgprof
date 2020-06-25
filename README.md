@@ -6,7 +6,7 @@
 
 fgprof is a sampling [Go](https://golang.org/) profiler that allows you to analyze On-CPU as well as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O) time together.
 
-Go's builtin sampling CPU profiler can only show On-CPU time, but it's very good at that. Go also includes tracing profilers that can analyze I/O, but they can't be combined with the CPU profiler.
+Go's builtin sampling CPU profiler can only show On-CPU time, but it's better than fgprof at that. Go also includes tracing profilers that can analyze I/O, but they can't be combined with the CPU profiler.
 
 fgprof is designed for analyzing applications with mixed I/O and CPU workloads.
 
@@ -181,6 +181,15 @@ This data is used to maintain an in-memory stack counter which can be converted 
 The builtin Go CPU profiler uses the [setitimer(2)](https://linux.die.net/man/2/setitimer) system call to ask the operating system to be sent a `SIGPROF` signal 100 times a second. Each signal stops the Go process and gets delivered to a random thread's `sigtrampgo()` function. This function then proceeds to call `sigprof()` or `sigprofNonGo()` to record the thread's current stack.
 
 Since Go uses non-blocking I/O, Goroutines that wait on I/O are parked and not running on any threads. Therefore they end up being largely invisible to Go's builtin CPU profiler.
+
+## The Future of Go Profiling
+
+There is a great proposal for [hardware performance counters for CPU profiling](https://go.googlesource.com/proposal/+/refs/changes/08/219508/2/design/36821-perf-counter-pprof.md#5-empirical-evidence-on-the-accuracy-and-precision-of-pmu-profiles) in Go. The proposal is aimed at making the builtin CPU Profiler even more accurate, especially under highly parallel workloads on many CPUs. It also includes a very in-depth analysis of the current profiler. Based on the design, I think the proposed profiler would also be blind to I/O workloads, but still seems appealing for CPU based workloads.
+
+As far as fgprof itself is concerned, I might implement streaming output, leaving the final aggregation to other tools. This would open the door to even more advanced analysis, perhaps by integrating with tools such as [flamescope](https://github.com/Netflix/flamescope).
+
+Additionally I'm also open to the idea of contributing fgprof to the Go project itself. I've [floated the idea](https://groups.google.com/g/golang-dev/c/LCJyvL90xv8) on the golang-dev mailing list, so let's see what happens.
+
 
 ## Known Issues
 
