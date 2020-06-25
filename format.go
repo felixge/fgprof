@@ -32,15 +32,7 @@ func writeFormat(w io.Writer, s stackCounter, f Format, hz int) error {
 }
 
 func writeFolded(w io.Writer, s stackCounter) error {
-	// Sort the stacks since I suspect that Brendan Gregg's FlameGraph tool's
-	// display order is influenced by it.
-	var stacks []string
-	for stack := range s {
-		stacks = append(stacks, stack)
-	}
-	sort.Strings(stacks)
-
-	for _, stack := range stacks {
+	for _, stack := range sortedKeys(s) {
 		count := s[stack]
 		if _, err := fmt.Fprintf(w, "%s %d\n", stack, count); err != nil {
 			return err
@@ -98,4 +90,13 @@ func toPprof(s stackCounter, hz int) *profile.Profile {
 		p.Sample = append(p.Sample, sample)
 	}
 	return p
+}
+
+func sortedKeys(s stackCounter) []string {
+	var keys []string
+	for stack := range s {
+		keys = append(keys, stack)
+	}
+	sort.Strings(keys)
+	return keys
 }

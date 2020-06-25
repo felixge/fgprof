@@ -25,7 +25,8 @@ func toProfile(s stackCounter, hz int) *profile.Profile {
 		},
 	}
 
-	for stack, count := range s {
+	for _, stack := range sortedKeys(s) {
+		count := s[stack]
 		sample := &profile.Sample{
 			Value: []int64{
 				int64(count),

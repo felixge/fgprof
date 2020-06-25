@@ -20,12 +20,12 @@ func Test_toProfile(t *testing.T) {
 Period: 0
 Samples:
 samples/count time/nanoseconds
-          2   20202020: 1 2 
-          1   10101010: 3 
+          1   10101010: 1 
+          2   20202020: 2 3 
 Locations
      1: 0x0 M=1 foo :0 s=0()
-     2: 0x0 M=1 bar :0 s=0()
-     3: 0x0 M=1 foo :0 s=0()
+     2: 0x0 M=1 foo :0 s=0()
+     3: 0x0 M=1 bar :0 s=0()
 Mappings
 1: 0x0/0x0/0x0   [FN]
 `)
