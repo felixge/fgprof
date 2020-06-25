@@ -195,7 +195,7 @@ Additionally I'm also open to the idea of contributing fgprof to the Go project 
 
 There is no perfect approach to profiling, and fgprof is no exception. Below is a list of known issues that will hopefully not be of practical concern for most users, but are important to highlight.
 
-- fgprof can't catch goroutines while they are running in loops without function calls. This can lead to reporting inaccuracies. Use the builtin CPU profiler if this is a problem for you.
+- fgprof can't catch goroutines while they are running in loops without function calls, only when they get asynchronously preempted. This can lead to reporting inaccuracies. Use the builtin CPU profiler if this is a problem for you.
 - fgprof may not work in Go 1.13 if another goroutine is in a loop without function calls the whole time. Async preemption in Go 1.14 should mostly fix this issue.
 - Internal C functions are not showing up in the stack traces, e.g. `runtime.nanotime` which is called by `time.Since` in the example program.
 - The current implementation is relying on the Go scheduler to schedule the internal goroutine at a fixed sample rate. Scheduler delays, especially biased ones, might cause inaccuracies.
