@@ -9,7 +9,6 @@ import (
 func toProfile(s stackCounter, hz int) *profile.Profile {
 	functionID := uint64(1)
 	locationID := uint64(1)
-	line := int64(1)
 
 	p := &profile.Profile{}
 	m := &profile.Mapping{ID: 1, HasFunctions: true}
@@ -47,8 +46,6 @@ func toProfile(s stackCounter, hz int) *profile.Profile {
 			}
 			p.Location = append(p.Location, location)
 			sample.Location = append(sample.Location, location)
-
-			line++
 
 			locationID++
 			functionID++
