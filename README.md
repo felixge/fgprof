@@ -176,7 +176,7 @@ fgprof is implemented as a background goroutine that wakes up 99 times per secon
 
 This data is used to maintain an in-memory stack counter which can be converted to the pprof or folded output format. The meat of the implementation is super simple and < 100 lines of code, you should [check it out](./fgprof.go).
 
-Generally speaking, fgprof should not have a big impact on the performance of your program. However `runtime.GoroutineProfile` calls `stopTheWorld()` and could be slow if you have a lot of running goroutines. For now the advise is to test the impact of the profiler on a development environment before running it against production instances. In the future this README will try to provide a more detailed analysis of the performance impact.
+Generally speaking, fgprof should not have a big impact on the performance of your program. However `runtime.GoroutineProfile` calls `stopTheWorld()` and could be slow if you have a lot of goroutines. For now the advise is to test the impact of the profiler on a development environment before running it against production instances. In the future this README will try to provide a more detailed analysis of the performance impact.
 
 ### Go's builtin CPU Profiler
 
