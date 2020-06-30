@@ -48,8 +48,8 @@ Additionally fgprof supports the plain text format used by Brendan Gregg's [Flam
 ```
 git clone https://github.com/brendangregg/FlameGraph
 cd FlameGraph
-curl -s 'localhost:6060/debug/fgprof?seconds=3' > fgprof.fold
-./flamegraph.pl fgprof.fold > fgprof.svg
+curl -s 'localhost:6060/debug/fgprof?seconds=3&format=folded' > fgprof.folded
+./flamegraph.pl fgprof.folded > fgprof.svg
 ```
 
 ![](./assets/fgprof_gregg.png)
