@@ -3,15 +3,13 @@ package fgprof
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 )
 
 // Handler returns an http handler that requires a "seconds" query argument
 // and produces a profile over this duration. The optional "format" parameter
-// controls if the output is written in Brendan Gregg's "folded" stack
-// format, or Google's "pprof" format. If no "format" is given, the handler
-// tries to guess the best format based on the http headers.
+// controls if the output is written in Google's "pprof" format (default) or
+// Brendan Gregg's "folded" stack format.
 func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var seconds int
@@ -22,23 +20,11 @@ func Handler() http.Handler {
 
 		format := Format(r.URL.Query().Get("format"))
 		if format == "" {
-			format = guessFormat(r)
+			format = FormatPprof
 		}
 
 		stop := Start(w, format)
 		defer stop()
 		time.Sleep(time.Duration(seconds) * time.Second)
 	})
-}
-
-// guessFormat returns FormatPprof if it looks like pprof sent r, otherwise
-// FormatFolded. It's not meant to be a perfect heuristic, but a nice
-// convenience for users that don't want to specify the format explicitly.
-func guessFormat(r *http.Request) Format {
-	for _, format := range r.Header["Accept-Encoding"] {
-		if strings.ToLower(format) == "gzip" {
-			return FormatPprof
-		}
-	}
-	return FormatFolded
 }
