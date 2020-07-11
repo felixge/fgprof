@@ -25,7 +25,9 @@ func main() {
 	// Run http endpoints for both pprof and fgprof.
 	http.DefaultServeMux.Handle("/debug/fgprof", fgprof.Handler())
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		addr := "localhost:6060"
+		log.Printf("Listening on %s", addr)
+		log.Println(http.ListenAndServe(addr, nil))
 	}()
 
 	// Start a sleep server to help with simulating slow network requests.
