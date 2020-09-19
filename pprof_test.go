@@ -6,7 +6,7 @@ import (
 )
 
 func Test_toProfile(t *testing.T) {
-	s := stackCounter{
+	s := map[string]int{
 		"foo;bar": 2,
 		"foo":     1,
 	}

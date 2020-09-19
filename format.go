@@ -20,7 +20,7 @@ const (
 	FormatPprof Format = "pprof"
 )
 
-func writeFormat(w io.Writer, s stackCounter, f Format, hz int) error {
+func writeFormat(w io.Writer, s map[string]int, f Format, hz int) error {
 	switch f {
 	case FormatFolded:
 		return writeFolded(w, s)
@@ -31,7 +31,7 @@ func writeFormat(w io.Writer, s stackCounter, f Format, hz int) error {
 	}
 }
 
-func writeFolded(w io.Writer, s stackCounter) error {
+func writeFolded(w io.Writer, s map[string]int) error {
 	for _, stack := range sortedKeys(s) {
 		count := s[stack]
 		if _, err := fmt.Fprintf(w, "%s %d\n", stack, count); err != nil {
@@ -41,7 +41,7 @@ func writeFolded(w io.Writer, s stackCounter) error {
 	return nil
 }
 
-func toPprof(s stackCounter, hz int) *profile.Profile {
+func toPprof(s map[string]int, hz int) *profile.Profile {
 	functionID := uint64(1)
 	locationID := uint64(1)
 	line := int64(1)
@@ -92,7 +92,7 @@ func toPprof(s stackCounter, hz int) *profile.Profile {
 	return p
 }
 
-func sortedKeys(s stackCounter) []string {
+func sortedKeys(s map[string]int) []string {
 	var keys []string
 	for stack := range s {
 		keys = append(keys, stack)

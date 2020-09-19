@@ -23,3 +23,20 @@ func TestStart(t *testing.T) {
 		t.Fatalf("invalid output:\n%s", out)
 	}
 }
+
+func BenchmarkProfiler(b *testing.B) {
+	prof := &profiler{}
+	for i := 0; i < b.N; i++ {
+		prof.GoroutineProfile()
+	}
+}
+
+func BenchmarkStackCounter(b *testing.B) {
+	prof := &profiler{}
+	stacks := prof.GoroutineProfile()
+	sc := stackCounter{}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sc.Update(stacks)
+	}
+}
