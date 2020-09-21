@@ -3,6 +3,7 @@ package fgprof
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -15,7 +16,7 @@ func Handler() http.Handler {
 		var seconds int
 		if s := r.URL.Query().Get("seconds"); s == "" {
 			seconds = 30
-		} else if _, err := fmt.Sscanf(s, "%d", &seconds); err != nil || seconds <= 0 {
+		} else if seconds, err := strconv.Atoi(s); err != nil || seconds <= 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "bad seconds: %d: %s\n", seconds, err)
 		}
