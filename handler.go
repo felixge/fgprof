@@ -14,9 +14,10 @@ import (
 func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var seconds int
+		var err error
 		if s := r.URL.Query().Get("seconds"); s == "" {
 			seconds = 30
-		} else if seconds, err := strconv.Atoi(s); err != nil || seconds <= 0 {
+		} else if seconds, err = strconv.Atoi(s); err != nil || seconds <= 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "bad seconds: %d: %s\n", seconds, err)
 		}
