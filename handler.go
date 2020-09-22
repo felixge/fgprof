@@ -20,6 +20,7 @@ func Handler() http.Handler {
 		} else if seconds, err = strconv.Atoi(s); err != nil || seconds <= 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "bad seconds: %d: %s\n", seconds, err)
+			return
 		}
 
 		format := Format(r.URL.Query().Get("format"))
