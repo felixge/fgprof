@@ -9,6 +9,7 @@ import (
 	"github.com/google/pprof/profile"
 )
 
+// Format decides how the ouput is rendered to the user.
 type Format string
 
 const (
@@ -93,9 +94,11 @@ func toPprof(s map[string]int, hz int) *profile.Profile {
 }
 
 func sortedKeys(s map[string]int) []string {
-	var keys []string
+	keys := make([]string, len(s))
+	i := 0
 	for stack := range s {
-		keys = append(keys, stack)
+		keys[i] = stack
+		i++
 	}
 	sort.Strings(keys)
 	return keys
