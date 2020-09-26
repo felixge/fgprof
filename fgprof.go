@@ -69,7 +69,7 @@ func (p *profiler) GoroutineProfile() []runtime.StackRecord {
 	// We don't know how many goroutines exist, so we have to grow p.stacks
 	// dynamically. We overshoot by 10% since it's possible that more goroutines
 	// are launched in between two calls to GoroutineProfile. Once p.stacks
-	// reaches the maximum numnber of goroutines used by the program, it will get
+	// reaches the maximum number of goroutines used by the program, it will get
 	// reused indefinitely, eliminating GoroutineProfile calls and allocations.
 	//
 	// TODO(fg) There might be workloads where it would be nice to shrink
