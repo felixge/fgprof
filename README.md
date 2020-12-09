@@ -8,7 +8,7 @@ fgprof is a sampling [Go](https://golang.org/) profiler that allows you to analy
 
 Go's builtin sampling CPU profiler can only show On-CPU time, but it's better than fgprof at that. Go also includes tracing profilers that can analyze I/O, but they can't be combined with the CPU profiler.
 
-fgprof is designed for analyzing applications with mixed I/O and CPU workloads.
+fgprof is designed for analyzing applications with mixed I/O and CPU workloads. This kind of profiling is also known as wall-clock profiling.
 
 ## Quick Start
 
