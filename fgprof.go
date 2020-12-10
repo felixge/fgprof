@@ -75,6 +75,11 @@ func (p *profiler) GoroutineProfile() []runtime.StackRecord {
 	// TODO(fg) There might be workloads where it would be nice to shrink
 	// p.stacks dynamically as well, but let's not over-engineer this until we
 	// understand those cases better.
+
+	nGoroutines := runtime.NumGoroutine()
+	if len(p.stacks) < nGoroutines {
+		p.stacks = make([]runtime.StackRecord, int(float64(nGoroutines)*1.1))
+	}
 	for {
 		n, ok := runtime.GoroutineProfile(p.stacks)
 		if !ok {
