@@ -3,6 +3,7 @@ package fgprof
 import (
 	"bytes"
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -26,20 +27,19 @@ func TestStart(t *testing.T) {
 }
 
 func BenchmarkProfiler(b *testing.B) {
-	prof := &profiler{}
+	prof := newProfiler()
 	for i := 0; i < b.N; i++ {
 		prof.GoroutineProfile()
 	}
 }
 
 func BenchmarkProfilerGoroutines(b *testing.B) {
-	for g := 1; g <= 1024*1024; g = g * 2 {
+	for g := 10000; g <= 10000; g = g * 2 {
 		g := g
 		name := fmt.Sprintf("%d goroutines", g)
 
 		b.Run(name, func(b *testing.B) {
-			prof := &profiler{}
-			initalRoutines := len(prof.GoroutineProfile())
+			initalRoutines := runtime.NumGoroutine()
 
 			readyCh := make(chan struct{})
 			stopCh := make(chan struct{})
@@ -50,6 +50,9 @@ func BenchmarkProfilerGoroutines(b *testing.B) {
 				}()
 				<-readyCh
 			}
+
+			// allocate profiler after some goroutines has been generated
+			prof := newProfiler()
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
@@ -78,7 +81,7 @@ func BenchmarkProfilerGoroutines(b *testing.B) {
 }
 
 func BenchmarkStackCounter(b *testing.B) {
-	prof := &profiler{}
+	prof := newProfiler()
 	stacks := prof.GoroutineProfile()
 	sc := stackCounter{}
 	b.ResetTimer()

@@ -20,7 +20,7 @@ func Start(w io.Writer, format Format) func() error {
 	ticker := time.NewTicker(time.Second / hz)
 	stopCh := make(chan struct{})
 
-	prof := &profiler{}
+	prof := newProfiler()
 	stackCounts := stackCounter{}
 
 	go func() {
@@ -50,6 +50,17 @@ type profiler struct {
 	selfFrame *runtime.Frame
 }
 
+// newProfiler returns a new profiler with a pre-allocated stacks field. This
+// is slightly faster than discovering its size during the first
+// GoroutineProfile() call.
+func newProfiler() *profiler {
+	n := runtime.NumGoroutine()
+	return &profiler{
+		stacks: make([]runtime.StackRecord, int(float64(n)*1.1)),
+	}
+	//return &profiler{}
+}
+
 // GoroutineProfile returns the stacks of all goroutines currently managed by
 // the scheduler. This includes both goroutines that are currently running
 // (On-CPU), as well as waiting (Off-CPU).
@@ -75,14 +86,10 @@ func (p *profiler) GoroutineProfile() []runtime.StackRecord {
 	// TODO(fg) There might be workloads where it would be nice to shrink
 	// p.stacks dynamically as well, but let's not over-engineer this until we
 	// understand those cases better.
-
-	nGoroutines := runtime.NumGoroutine()
-	if len(p.stacks) < nGoroutines {
-		p.stacks = make([]runtime.StackRecord, int(float64(nGoroutines)*1.1))
-	}
 	for {
 		n, ok := runtime.GoroutineProfile(p.stacks)
 		if !ok {
+			//fmt.Printf("realloc\n")
 			p.stacks = make([]runtime.StackRecord, int(float64(n)*1.1))
 		} else {
 			return p.stacks[0:n]
