@@ -34,7 +34,7 @@ func BenchmarkProfiler(b *testing.B) {
 }
 
 func BenchmarkProfilerGoroutines(b *testing.B) {
-	for g := 10000; g <= 10000; g = g * 2 {
+	for g := 1; g <= 1024*1024; g = g * 2 {
 		g := g
 		name := fmt.Sprintf("%d goroutines", g)
 

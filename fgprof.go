@@ -58,7 +58,6 @@ func newProfiler() *profiler {
 	return &profiler{
 		stacks: make([]runtime.StackRecord, int(float64(n)*1.1)),
 	}
-	//return &profiler{}
 }
 
 // GoroutineProfile returns the stacks of all goroutines currently managed by
@@ -89,7 +88,6 @@ func (p *profiler) GoroutineProfile() []runtime.StackRecord {
 	for {
 		n, ok := runtime.GoroutineProfile(p.stacks)
 		if !ok {
-			//fmt.Printf("realloc\n")
 			p.stacks = make([]runtime.StackRecord, int(float64(n)*1.1))
 		} else {
 			return p.stacks[0:n]
