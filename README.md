@@ -10,6 +10,8 @@ Go's builtin sampling CPU profiler can only show On-CPU time, but it's better th
 
 fgprof is designed for analyzing applications with mixed I/O and CPU workloads. This kind of profiling is also known as wall-clock profiling.
 
+⚠️ fgprof can cause significant STW latencies in applications with a lot of goroutines (> 1-10k). Be careful with it in production.
+
 ## Quick Start
 
 If this is the first time you hear about fgprof, you should start by reading about [The Problem](#the-problem) & [How it Works](#how-it-works).
