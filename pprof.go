@@ -23,6 +23,10 @@ func toProfile(s map[string]int, hz int) *profile.Profile {
 			Unit: "nanoseconds",
 		},
 	}
+	p.PeriodType = &profile.ValueType{
+		Type: "cpu",
+		Unit: "nanoseconds",
+	}
 
 	for _, stack := range sortedKeys(s) {
 		count := s[stack]

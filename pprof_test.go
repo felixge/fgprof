@@ -17,6 +17,7 @@ func Test_toProfile(t *testing.T) {
 	}
 
 	want := strings.TrimSpace(`
+PeriodType: cpu nanoseconds
 Period: 0
 Samples:
 samples/count time/nanoseconds

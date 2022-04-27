@@ -61,6 +61,10 @@ func toPprof(s map[string]int, hz int) *profile.Profile {
 			Unit: "nanoseconds",
 		},
 	}
+	p.PeriodType = &profile.ValueType{
+		Type: "wallclock",
+		Unit: "nanoseconds",
+	}
 
 	for stack, count := range s {
 		sample := &profile.Sample{
