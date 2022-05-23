@@ -18,7 +18,7 @@ const (
 )
 
 // sleepURL is the url for the sleep server used by slowNetworkRequest. It's
-// a global variable to keep the cute simplicitly of main's loop.
+// a global variable to keep the cute simplicity of main's loop.
 var sleepURL string
 
 func main() {
