@@ -3,6 +3,7 @@ package fgprof
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func Test_toPprof(t *testing.T) {
@@ -11,7 +12,13 @@ func Test_toPprof(t *testing.T) {
 		"foo":     1,
 	}
 
-	p := toPprof(s, 99)
+	before := time.Local
+	defer func() { time.Local = before }()
+	time.Local = time.UTC
+
+	start := time.Date(2022, 8, 27, 14, 32, 23, 0, time.UTC)
+	end := start.Add(time.Second)
+	p := toPprof(s, 99, start, end)
 	if err := p.CheckValid(); err != nil {
 		t.Fatal(err)
 	}
@@ -19,6 +26,8 @@ func Test_toPprof(t *testing.T) {
 	want := strings.TrimSpace(`
 PeriodType: wallclock nanoseconds
 Period: 10101010
+Time: 2022-08-27 14:32:23 +0000 UTC
+Duration: 1s
 Samples:
 samples/count time/nanoseconds
           1   10101010: 1 

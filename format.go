@@ -5,6 +5,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/pprof/profile"
 )
@@ -21,12 +22,12 @@ const (
 	FormatPprof Format = "pprof"
 )
 
-func writeFormat(w io.Writer, s map[string]int, f Format, hz int) error {
+func writeFormat(w io.Writer, s map[string]int, f Format, hz int, startTime, endTime time.Time) error {
 	switch f {
 	case FormatFolded:
 		return writeFolded(w, s)
 	case FormatPprof:
-		return toPprof(s, hz).Write(w)
+		return toPprof(s, hz, startTime, endTime).Write(w)
 	default:
 		return fmt.Errorf("unknown format: %q", f)
 	}
@@ -42,7 +43,7 @@ func writeFolded(w io.Writer, s map[string]int) error {
 	return nil
 }
 
-func toPprof(s map[string]int, hz int) *profile.Profile {
+func toPprof(s map[string]int, hz int, startTime, endTime time.Time) *profile.Profile {
 	functionID := uint64(1)
 	locationID := uint64(1)
 	line := int64(1)
@@ -50,6 +51,8 @@ func toPprof(s map[string]int, hz int) *profile.Profile {
 	p := &profile.Profile{}
 	m := &profile.Mapping{ID: 1, HasFunctions: true}
 	p.Period = int64(1e9 / hz) // Number of nanoseconds between samples.
+	p.TimeNanos = startTime.UnixNano()
+	p.DurationNanos = int64(endTime.Sub(startTime))
 	p.Mapping = []*profile.Mapping{m}
 	p.SampleType = []*profile.ValueType{
 		{

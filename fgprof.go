@@ -14,6 +14,8 @@ import (
 // that needs to be invoked by the caller to stop the profiling and write the
 // results to w using the given format.
 func Start(w io.Writer, format Format) func() error {
+	startTime := time.Now()
+
 	// Go's CPU profiler uses 100hz, but 99hz might be less likely to result in
 	// accidental synchronization with the program we're profiling.
 	const hz = 99
@@ -39,7 +41,15 @@ func Start(w io.Writer, format Format) func() error {
 
 	return func() error {
 		stopCh <- struct{}{}
-		return writeFormat(w, stackCounts.HumanMap(prof.SelfFrame()), format, hz)
+		endTime := time.Now()
+		return writeFormat(
+			w,
+			stackCounts.HumanMap(prof.SelfFrame()),
+			format,
+			hz,
+			startTime,
+			endTime,
+		)
 	}
 }
 
