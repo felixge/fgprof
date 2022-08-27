@@ -66,7 +66,8 @@ func toPprof(s map[string]int, hz int) *profile.Profile {
 		Unit: "nanoseconds",
 	}
 
-	for stack, count := range s {
+	for _, stack := range sortedKeys(s) {
+		count := s[stack]
 		sample := &profile.Sample{
 			Value: []int64{
 				int64(count),
