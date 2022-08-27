@@ -10,7 +10,7 @@ import (
 	"github.com/google/pprof/profile"
 )
 
-// Format decides how the ouput is rendered to the user.
+// Format decides how the output is rendered to the user.
 type Format string
 
 const (
