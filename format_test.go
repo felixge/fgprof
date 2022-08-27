@@ -12,6 +12,10 @@ func Test_toPprof(t *testing.T) {
 		"foo":     1,
 	}
 
+	before := time.Local
+	defer func() { time.Local = before }()
+	time.Local = time.UTC
+
 	start := time.Date(2022, 8, 27, 14, 32, 23, 0, time.UTC)
 	end := start.Add(time.Second)
 	p := toPprof(s, 99, start, end)
@@ -22,7 +26,7 @@ func Test_toPprof(t *testing.T) {
 	want := strings.TrimSpace(`
 PeriodType: wallclock nanoseconds
 Period: 10101010
-Time: 2022-08-27 16:32:23 +0200 CEST
+Time: 2022-08-27 14:32:23 +0000 UTC
 Duration: 1s
 Samples:
 samples/count time/nanoseconds
