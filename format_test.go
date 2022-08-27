@@ -5,23 +5,24 @@ import (
 	"testing"
 )
 
-func Test_toProfile(t *testing.T) {
+func Test_toPprof(t *testing.T) {
 	s := map[string]int{
 		"foo;bar": 2,
 		"foo":     1,
 	}
 
-	p := toProfile(s, 99)
+	p := toPprof(s, 99)
 	if err := p.CheckValid(); err != nil {
 		t.Fatal(err)
 	}
 
 	want := strings.TrimSpace(`
-Period: 0
+PeriodType: wallclock nanoseconds
+Period: 10101010
 Samples:
 samples/count time/nanoseconds
           1   10101010: 1 
-          2   20202020: 2 3 
+          2   20202020: 3 2 
 Locations
      1: 0x0 M=1 foo :0 s=0()
      2: 0x0 M=1 foo :0 s=0()
