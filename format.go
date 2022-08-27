@@ -52,7 +52,7 @@ func toPprof(s map[string]int, hz int, startTime, endTime time.Time) *profile.Pr
 	m := &profile.Mapping{ID: 1, HasFunctions: true}
 	p.Period = int64(1e9 / hz) // Number of nanoseconds between samples.
 	p.TimeNanos = startTime.UnixNano()
-	p.DurationNanos = endTime.UnixNano() - p.TimeNanos
+	p.DurationNanos = int64(endTime.Sub(startTime))
 	p.Mapping = []*profile.Mapping{m}
 	p.SampleType = []*profile.ValueType{
 		{
