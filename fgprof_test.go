@@ -98,13 +98,13 @@ samples/count time/nanoseconds
           1   10101010: 1 
           2   20202020: 2 1 
 Locations
-     1: 0x0 M=1 foo foo.go:23 s=0
-     2: 0x0 M=1 bar bar.go:42 s=0
+     1: 0x0 M=1 foo foo.go:23:0 s=0
+     2: 0x0 M=1 bar bar.go:42:0 s=0
 Mappings
 1: 0x0/0x0/0x0   [FN]
 `)
 	got := strings.TrimSpace(p.String())
-	require.Equal(t, got, want)
+	require.Equal(t, want, got)
 }
 
 func BenchmarkProfiler(b *testing.B) {
