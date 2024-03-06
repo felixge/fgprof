@@ -1,36 +1,19 @@
-// fgprof is a sampling Go profiler that allows you to analyze On-CPU as well
-// as [Off-CPU](http://www.brendangregg.com/offcpuanalysis.html) (e.g. I/O)
-// time together.
 package fgprof
 
 import (
-	"fmt"
 	"io"
 	"math"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/google/pprof/profile"
 )
 
-// Format decides how the output is rendered to the user.
-type Format string
-
-const (
-	// FormatFolded is used by Brendan Gregg's FlameGraph utility, see
-	// https://github.com/brendangregg/FlameGraph#2-fold-stacks.
-	FormatFolded Format = "folded"
-	// FormatPprof is used by Google's pprof utility, see
-	// https://github.com/google/pprof/blob/master/proto/README.md.
-	FormatPprof Format = "pprof"
-)
-
-// Start begins profiling the goroutines of the program and returns a function
-// that needs to be invoked by the caller to stop the profiling and write the
-// results to w using the given format.
-func Start(w io.Writer, format Format) func() error {
+func Start(w io.Writer) func() error {
 	startTime := time.Now()
 
 	// Go's CPU profiler uses 100hz, but 99hz might be less likely to result in
@@ -39,7 +22,7 @@ func Start(w io.Writer, format Format) func() error {
 	ticker := time.NewTicker(time.Second / hz)
 	stopCh := make(chan struct{})
 	prof := &profiler{}
-	profile := newWallclockProfile()
+	p := newWallClockProfile()
 
 	var sampleCount int64
 
@@ -50,9 +33,8 @@ func Start(w io.Writer, format Format) func() error {
 			select {
 			case <-ticker.C:
 				sampleCount++
-
-				stacks := prof.GoroutineProfile()
-				profile.Add(stacks)
+				stacks, labels := prof.GoroutineProfile()
+				p.Add(stacks, labels)
 			case <-stopCh:
 				return
 			}
@@ -62,7 +44,7 @@ func Start(w io.Writer, format Format) func() error {
 	return func() error {
 		stopCh <- struct{}{}
 		endTime := time.Now()
-		profile.Ignore(prof.SelfFrames()...)
+		p.Ignore(prof.SelfFrames()...)
 
 		// Compute actual sample rate in case, due to performance issues, we
 		// were not actually able to sample at the given hz. Converting
@@ -70,7 +52,7 @@ func Start(w io.Writer, format Format) func() error {
 		// direction and improves the correctness of times in profiles.
 		duration := endTime.Sub(startTime)
 		actualHz := float64(sampleCount) / (float64(duration) / 1e9)
-		return profile.Export(w, format, int(math.Round(actualHz)), startTime, endTime)
+		return p.exportPprof(int64(math.Round(actualHz)), startTime, endTime).Write(w)
 	}
 }
 
@@ -78,13 +60,17 @@ func Start(w io.Writer, format Format) func() error {
 // runtime.GoroutineProfile().
 type profiler struct {
 	stacks    []runtime.StackRecord
+	labels    []unsafe.Pointer
 	selfFrame *runtime.Frame
 }
+
+//go:linkname runtime_goroutineProfileWithLabels runtime/pprof.runtime_goroutineProfileWithLabels
+func runtime_goroutineProfileWithLabels([]runtime.StackRecord, []unsafe.Pointer) (int, bool)
 
 // GoroutineProfile returns the stacks of all goroutines currently managed by
 // the scheduler. This includes both goroutines that are currently running
 // (On-CPU), as well as waiting (Off-CPU).
-func (p *profiler) GoroutineProfile() []runtime.StackRecord {
+func (p *profiler) GoroutineProfile() ([]runtime.StackRecord, []unsafe.Pointer) {
 	if p.selfFrame == nil {
 		// Determine the runtime.Frame of this func so we can hide it from our
 		// profiling output.
@@ -107,11 +93,12 @@ func (p *profiler) GoroutineProfile() []runtime.StackRecord {
 	// p.stacks dynamically as well, but let's not over-engineer this until we
 	// understand those cases better.
 	for {
-		n, ok := runtime.GoroutineProfile(p.stacks)
+		n, ok := runtime_goroutineProfileWithLabels(p.stacks, p.labels)
 		if !ok {
 			p.stacks = make([]runtime.StackRecord, int(float64(n)*1.1))
+			p.labels = make([]unsafe.Pointer, int(float64(n)*1.1))
 		} else {
-			return p.stacks[0:n]
+			return p.stacks[0:n], p.labels[0:n]
 		}
 	}
 }
@@ -125,35 +112,120 @@ func (p *profiler) SelfFrames() []*runtime.Frame {
 	return nil
 }
 
-func newWallclockProfile() *wallclockProfile {
-	return &wallclockProfile{stacks: map[[32]uintptr]*wallclockStack{}}
+func newWallClockProfile() *wallClockProfile {
+	return &wallClockProfile{stacks: map[[32]uintptr]*stack{}}
 }
 
-// wallclockProfile holds a wallclock profile that can be exported in different
-// formats.
-type wallclockProfile struct {
-	stacks map[[32]uintptr]*wallclockStack
+type wallClockProfile struct {
+	stacks map[[32]uintptr]*stack
 	ignore []*runtime.Frame
 }
 
-// wallclockStack holds the symbolized frames of a stack trace and the number
-// of times it has been seen.
-type wallclockStack struct {
+type stack struct {
 	frames []*runtime.Frame
-	count  int
+	dims   []*dimension
 }
 
-// Ignore sets a list of frames that should be ignored when exporting the
-// profile.
-func (p *wallclockProfile) Ignore(frames ...*runtime.Frame) {
+type dimension struct {
+	labels unsafe.Pointer
+	key    string
+	value  int64
+}
+
+func (d *dimension) buildKey(tmp []string) []string {
+	if d.labels == nil || d.key != "" {
+		return tmp
+	}
+	d.key, tmp = mapToString(tmp, *(*map[string]string)(d.labels))
+	return tmp
+}
+
+func mapToString(keys []string, m map[string]string) (string, []string) {
+	keys = keys[:0]
+	for key := range m {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	var s strings.Builder
+	for _, key := range keys {
+		s.WriteString(key)
+		s.WriteRune(':')
+		s.WriteString(m[key])
+		s.WriteRune(';')
+	}
+	return s.String(), keys
+}
+
+func (s *stack) mergeDimensions() {
+	tmp := make([]string, 0, 8)
+	for _, d := range s.dims {
+		tmp = d.buildKey(tmp)
+	}
+	slices.SortFunc(s.dims, func(a, b *dimension) int {
+		return strings.Compare(a.key, b.key)
+	})
+	s.dims = slices.CompactFunc(s.dims, func(a, b *dimension) bool {
+		return a.key == b.key
+	})
+}
+
+func (s *stack) add(labels unsafe.Pointer) {
+	if labels == nil {
+		// Fast path: labels are not used.
+		if len(s.dims) == 0 {
+			s.dims = append(s.dims, &dimension{value: 1})
+			return
+		}
+		if len(s.dims) == 1 && s.dims[0].labels == nil {
+			s.dims[0].value++
+			return
+		}
+		// There are multiple dimensions, we need to find
+		// one without labels or create it.
+		var found bool
+		for j := range s.dims {
+			if s.dims[j].labels == nil {
+				s.dims[j].value++
+				found = true
+				break
+			}
+		}
+		if !found {
+			s.dims = append(s.dims, &dimension{value: 1})
+			return
+		}
+	}
+	// Fast path: assume the pointer only changes when the label
+	// set changes, therefore we could compare the pointers.
+	var found bool
+	for j := range s.dims {
+		if s.dims[j].labels == labels {
+			s.dims[j].value++
+			found = true
+			break
+		}
+	}
+	if found {
+		return
+	}
+	// We just append it. Dimensions are to be merged at export.
+	s.dims = append(s.dims, &dimension{
+		labels: labels,
+		value:  1,
+	})
+}
+
+// Ignore sets a list of frames that should be ignored when exporting the profile.
+func (p *wallClockProfile) Ignore(frames ...*runtime.Frame) {
 	p.ignore = frames
 }
 
 // Add adds the given stack traces to the profile.
-func (p *wallclockProfile) Add(stackRecords []runtime.StackRecord) {
-	for _, stackRecord := range stackRecords {
-		if _, ok := p.stacks[stackRecord.Stack0]; !ok {
-			ws := &wallclockStack{}
+func (p *wallClockProfile) Add(stackRecords []runtime.StackRecord, labelRecords []unsafe.Pointer) {
+	for i, stackRecord := range stackRecords {
+		ws, ok := p.stacks[stackRecord.Stack0]
+		if !ok {
+			ws = &stack{}
 			// symbolize pcs into frames
 			frames := runtime.CallersFrames(stackRecord.Stack())
 			for {
@@ -165,25 +237,14 @@ func (p *wallclockProfile) Add(stackRecords []runtime.StackRecord) {
 			}
 			p.stacks[stackRecord.Stack0] = ws
 		}
-		p.stacks[stackRecord.Stack0].count++
-	}
-}
-
-func (p *wallclockProfile) Export(w io.Writer, f Format, hz int, startTime, endTime time.Time) error {
-	switch f {
-	case FormatFolded:
-		return p.exportFolded(w)
-	case FormatPprof:
-		return p.exportPprof(hz, startTime, endTime).Write(w)
-	default:
-		return fmt.Errorf("unknown format: %q", f)
+		ws.add(labelRecords[i])
 	}
 }
 
 // exportStacks returns the stacks in this profile except those that have been
 // set to Ignore().
-func (p *wallclockProfile) exportStacks() []*wallclockStack {
-	stacks := make([]*wallclockStack, 0, len(p.stacks))
+func (p *wallClockProfile) exportStacks() []*stack {
+	stacks := make([]*stack, 0, len(p.stacks))
 nextStack:
 	for _, ws := range p.stacks {
 		for _, f := range ws.frames {
@@ -198,23 +259,7 @@ nextStack:
 	return stacks
 }
 
-func (p *wallclockProfile) exportFolded(w io.Writer) error {
-	var lines []string
-	stacks := p.exportStacks()
-	for _, ws := range stacks {
-		var foldedStack []string
-		for _, f := range ws.frames {
-			foldedStack = append(foldedStack, f.Function)
-		}
-		line := fmt.Sprintf("%s %d", strings.Join(foldedStack, ";"), ws.count)
-		lines = append(lines, line)
-	}
-	sort.Strings(lines)
-	_, err := io.WriteString(w, strings.Join(lines, "\n")+"\n")
-	return err
-}
-
-func (p *wallclockProfile) exportPprof(hz int, startTime, endTime time.Time) *profile.Profile {
+func (p *wallClockProfile) exportPprof(hz int64, startTime, endTime time.Time) *profile.Profile {
 	prof := &profile.Profile{}
 	m := &profile.Mapping{ID: 1, HasFunctions: true}
 	prof.Period = int64(1e9 / hz) // Number of nanoseconds between samples.
@@ -223,16 +268,12 @@ func (p *wallclockProfile) exportPprof(hz int, startTime, endTime time.Time) *pr
 	prof.Mapping = []*profile.Mapping{m}
 	prof.SampleType = []*profile.ValueType{
 		{
-			Type: "samples",
-			Unit: "count",
-		},
-		{
-			Type: "time",
+			Type: "wall",
 			Unit: "nanoseconds",
 		},
 	}
 	prof.PeriodType = &profile.ValueType{
-		Type: "wallclock",
+		Type: "wall",
 		Unit: "nanoseconds",
 	}
 
@@ -248,13 +289,7 @@ func (p *wallclockProfile) exportPprof(hz int, startTime, endTime time.Time) *pr
 	}
 	locationIdx := map[locationKey]*profile.Location{}
 	for _, ws := range p.exportStacks() {
-		sample := &profile.Sample{
-			Value: []int64{
-				int64(ws.count),
-				int64(1000 * 1000 * 1000 / hz * ws.count),
-			},
-		}
-
+		locs := make([]*profile.Location, 0, 32)
 		for _, frame := range ws.frames {
 			fnKey := functionKey{Name: frame.Function, Filename: frame.File}
 			function, ok := funcIdx[fnKey]
@@ -283,36 +318,29 @@ func (p *wallclockProfile) exportPprof(hz int, startTime, endTime time.Time) *pr
 				locationIdx[locKey] = location
 				prof.Location = append(prof.Location, location)
 			}
-			sample.Location = append(sample.Location, location)
+			locs = append(locs, location)
 		}
-		prof.Sample = append(prof.Sample, sample)
+		ws.mergeDimensions()
+		// We reuse the same locs slice as we assume the profile is immutable.
+		for i := 0; i < len(ws.dims); i++ {
+			prof.Sample = append(prof.Sample, &profile.Sample{
+				Location: locs,
+				Value:    []int64{1e9 / hz * ws.dims[i].value},
+				Label:    convertLabels(ws.dims[i].labels),
+			})
+		}
 	}
 	return prof
 }
 
-type symbolizedStacks map[[32]uintptr][]frameCount
-
-func (w wallclockProfile) Symbolize(exclude *runtime.Frame) symbolizedStacks {
-	m := make(symbolizedStacks)
-outer:
-	for stack0, ws := range w.stacks {
-		frames := runtime.CallersFrames((&runtime.StackRecord{Stack0: stack0}).Stack())
-
-		for {
-			frame, more := frames.Next()
-			if frame.Entry == exclude.Entry {
-				continue outer
-			}
-			m[stack0] = append(m[stack0], frameCount{Frame: &frame, Count: ws.count})
-			if !more {
-				break
-			}
-		}
+func convertLabels(l unsafe.Pointer) map[string][]string {
+	if l == nil {
+		return nil
+	}
+	m := make(map[string][]string)
+	s := (*map[string]string)(l)
+	for k, v := range *s {
+		m[k] = []string{v}
 	}
 	return m
-}
-
-type frameCount struct {
-	*runtime.Frame
-	Count int
 }
