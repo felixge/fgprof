@@ -16,19 +16,23 @@ import (
 // in different formats with the expected stack frames.
 func TestStart(t *testing.T) {
 	tests := []struct {
+		// Sampling duration
+		Duration time.Duration
 		// Format is the export format being tested
 		Format Format
 		// ContainsStack returns true if the given profile contains a frame with the given name
 		ContainsStack func(t *testing.T, prof *bytes.Buffer, frame string) bool
 	}{
 		{
-			Format: FormatFolded,
+			Duration: 100 * time.Millisecond,
+			Format:   FormatFolded,
 			ContainsStack: func(t *testing.T, prof *bytes.Buffer, frame string) bool {
 				return strings.Contains(prof.String(), frame)
 			},
 		},
 		{
-			Format: FormatPprof,
+			Duration: 100 * time.Millisecond,
+			Format:   FormatPprof,
 			ContainsStack: func(t *testing.T, prof *bytes.Buffer, frame string) bool {
 				pprof, err := profile.ParseData(prof.Bytes())
 				require.NoError(t, err)
@@ -45,13 +49,24 @@ func TestStart(t *testing.T) {
 				return false
 			},
 		},
+		// check divide by zero
+		{
+			Duration: 0,
+			Format:   FormatPprof,
+			ContainsStack: func(t *testing.T, prof *bytes.Buffer, frame string) bool {
+				pprof, err := profile.ParseData(prof.Bytes())
+				require.NoError(t, err)
+				require.NoError(t, pprof.CheckValid())
+				return "fgprof.TestStart" == frame
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(string(test.Format), func(t *testing.T) {
 			prof := &bytes.Buffer{}
 			stop := Start(prof, test.Format)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(test.Duration)
 			if err := stop(); err != nil {
 				t.Fatal(err)
 			}
