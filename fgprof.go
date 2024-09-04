@@ -226,6 +226,10 @@ func (p *wallclockProfile) exportFolded(w io.Writer) error {
 
 func (p *wallclockProfile) exportPprof(hz int, startTime, endTime time.Time) *profile.Profile {
 	prof := &profile.Profile{}
+	if hz == 0 {
+		return prof
+	}
+
 	m := &profile.Mapping{ID: 1, HasFunctions: true}
 	prof.Period = int64(1e9 / hz) // Number of nanoseconds between samples.
 	prof.TimeNanos = startTime.UnixNano()
