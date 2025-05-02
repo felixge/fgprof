@@ -205,6 +205,10 @@ nextStack:
 		}
 		stacks = append(stacks, ws)
 	}
+	// sort stacks by count to create stable output for testing purposes.
+	sort.Slice(stacks, func(i, j int) bool {
+		return stacks[i].count < stacks[j].count
+	})
 	return stacks
 }
 
