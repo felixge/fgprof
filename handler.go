@@ -28,6 +28,12 @@ func Handler() http.Handler {
 			format = FormatPprof
 		}
 
+		if format == FormatPprof {
+			// Set Content Type assuming Start will work,
+			// because if it does it starts writing.
+			w.Header().Set("Content-Type", "application/octet-stream")
+		}
+
 		stop := Start(w, format)
 		defer stop()
 		time.Sleep(time.Duration(seconds) * time.Second)
