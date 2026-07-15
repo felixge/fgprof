@@ -70,7 +70,11 @@ func Start(w io.Writer, format Format) func() error {
 		// direction and improves the correctness of times in profiles.
 		duration := endTime.Sub(startTime)
 		actualHz := float64(sampleCount) / (float64(duration) / 1e9)
-		return profile.Export(w, format, int(math.Round(actualHz)), startTime, endTime)
+		measuredHz := int(math.Round(actualHz))
+		if measuredHz < 1 {
+			measuredHz = hz
+		}
+		return profile.Export(w, format, measuredHz, startTime, endTime)
 	}
 }
 

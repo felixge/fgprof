@@ -61,6 +61,17 @@ func TestStart(t *testing.T) {
 	}
 }
 
+func TestStartPprofWithoutSamples(t *testing.T) {
+	prof := &bytes.Buffer{}
+	stop := Start(prof, FormatPprof)
+	require.NoError(t, stop())
+
+	pprof, err := profile.ParseData(prof.Bytes())
+	require.NoError(t, err)
+	require.NoError(t, pprof.CheckValid())
+	require.NotZero(t, pprof.Period)
+}
+
 func Test_toPprof(t *testing.T) {
 	foo := &runtime.Frame{PC: 1, Function: "foo", File: "foo.go", Line: 23}
 	bar := &runtime.Frame{PC: 2, Function: "bar", File: "bar.go", Line: 42}
