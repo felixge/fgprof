@@ -37,6 +37,25 @@ func main() {
 }
 ```
 
+### Programmatic Start / defer (no HTTP)
+
+If you want multiple runs written to files (similar to `pprof.StartCPUProfile`), use `fgprof.Start` and `defer` the returned stop function:
+
+```go
+f, err := os.Create("fgprof.pprof")
+if err != nil {
+	log.Fatal(err)
+}
+defer f.Close()
+
+stop := fgprof.Start(f, fgprof.FormatPprof)
+defer stop()
+
+// <code to profile>
+```
+
+`FormatPprof` produces a profile for `go tool pprof`. Use `fgprof.FormatFolded` for Brendan Gregg's FlameGraph `folded` input.
+
 fgprof is compatible with the `go tool pprof` visualizer, so taking and analyzing a 3s profile is as simple as:
 
 ```
